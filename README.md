@@ -1,6 +1,6 @@
-# TVAuto
+# TV Auto
 
-TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手机、平板、电视）播放网络视频资源。
+TV Auto 是一款基于 WebView 的电视直播浏览器，支持多设备（手机、平板、电视）播放网络视频资源。
 
 ---
 
@@ -54,5 +54,12 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
 - 新增：频道管理按钮，首次使用常驻，正常状态自动隐藏
 - 修复：全屏播放时虚拟按键、小横条无法隐藏的问题
 ---
+
 ## 🎉 欢迎使用 & 反馈！
+
+## ☕ 支持开发者
+
+如果你觉得 TV Auto 帮到了你，欢迎请作者喝杯咖啡，这将鼓励我继续更新！
+
+<img width="512" height="512" alt="IMG_2781" src="https://github.com/user-attachments/assets/d6cde049-064a-4fe2-96cb-d66c67c9c21a" />
 
