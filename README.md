@@ -4,6 +4,27 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
 
 ---
 
+## 📦 v3.2 更新
+
+- 新增：安卓TV 图标
+
+---
+
+## 📦 v3.1 更新
+
+- 修复：采用深色模式
+- 新增：更新按键
+
+---
+
+## 📦 v3.0 更新
+
+- 新增：长按屏幕隐藏/显示侧边按键
+- 新增：频道管理按钮，首次使用常驻，正常状态自动隐藏
+- 修复：全屏播放时虚拟按键、小横条无法隐藏的问题
+
+---
+
 ## ⚙️ 功能概览
 
 - 支持手动添加或批量导入频道，只需提供名称和 URL
@@ -44,8 +65,8 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
 
 ### 常用操作
 
-- 手机平板：`上下滑动` `点按按键` 切换频道，`长按屏幕` 显示/隐藏侧边按键
-- 遥控器：`数字键` `上下键` 切换频道，`确认键` 刷新页面
+- 上下滑动切换频道，长按屏幕显示/隐藏侧边按键
+- 遥控器数字键切换频道，确认键刷新页面
 
 ---
 
@@ -55,44 +76,8 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
 
 ## 📷 截图
 
-### Android TV 16:9
-<img width="2560" height="1142" alt="image" src="https://github.com/user-attachments/assets/bef73ae1-fd3f-4739-b6d3-7507cd3fc7b0" />
-<img width="2560" height="1158" alt="image" src="https://github.com/user-attachments/assets/1046d720-e8b1-478c-b61f-e457d57e3f6a" />
-<img width="2560" height="1151" alt="image" src="https://github.com/user-attachments/assets/7e767389-a936-4e7e-a3db-b24f6b4ab4fe" />
-<img width="2560" height="1149" alt="image" src="https://github.com/user-attachments/assets/e2c4b213-347f-4688-a7ef-06a4d0bc3b51" />
-
-### 手机 20:9
-<img width="1795" height="804" alt="image" src="https://github.com/user-attachments/assets/71890e1c-5eb3-4835-a3ae-a29bacf51933" />
-<img width="1734" height="813" alt="image" src="https://github.com/user-attachments/assets/91dd06e9-247b-4232-a32d-1d5dfd0ff737" />
-长按屏幕切换状态
-<img width="1797" height="808" alt="image" src="https://github.com/user-attachments/assets/5bac7daf-ec5b-4693-acb2-ae899dd5542d" />
-
-### 平板 16：10
-<img width="1599" height="984" alt="image" src="https://github.com/user-attachments/assets/e2edbd8f-b14c-4ad2-ae7b-58e440c2b256" />
-长按屏幕切换状态
-<img width="1601" height="1003" alt="image" src="https://github.com/user-attachments/assets/4c5f818e-aa33-4a9e-a94b-41ef01e8b690" />
-
----
-## 更新内容
-
-### 📦 v3.3 更新
-- 新增：快速切换频道
-- 新增：支持http与m3u8链接
-### 📦 v3.2 更新
-- 新增：安卓TV 图标
-### 📦 v3.1 更新
-- 修复：采用深色模式
-- 新增：更新按键
-### 📦 v3.0 更新
-- 新增：长按屏幕隐藏/显示侧边按键
-- 新增：频道管理按钮，首次使用常驻，正常状态自动隐藏
-- 修复：全屏播放时虚拟按键、小横条无法隐藏的问题
----
-
-
-
-
-
-
-
-
+![Collage_20250708_231622018](https://github.com/user-attachments/assets/4bd9dd1d-3b30-44cb-9162-a60cdf471346)
+![QQ_1748088193638](https://github.com/user-attachments/assets/b5ef3582-493f-4ec2-87dc-d2910bec98cf)
+![QQ_1748088907744](https://github.com/user-attachments/assets/3a4e7bdc-7b1d-412a-a4d0-e47d5ff0f7c3)
+![QQ_1747568731949](https://github.com/user-attachments/assets/c78207c3-6a9f-4f5a-a2ab-cae07f6931ea)
+![QQ_1748077658933](https://github.com/user-attachments/assets/596badb3-57e0-4c1e-893f-4bb57186dbcd)

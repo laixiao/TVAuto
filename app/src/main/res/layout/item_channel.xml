@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/itemContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:layout_marginBottom="4dp"
+    android:background="@drawable/selector_channel_card"
+    android:clickable="true"
+    android:focusable="true">
+
+    <View
+        android:id="@+id/indicator"
+        android:layout_width="4dp"
+        android:layout_height="16dp"
+        android:background="#0079FB"
+        android:visibility="gone"
+        android:layout_marginEnd="12dp"/>
+
+    <TextView
+        android:id="@+id/tvNum"
+        android:layout_width="32dp"
+        android:layout_height="22dp"
+        android:background="@drawable/bg_number_badge"
+        android:gravity="center"
+        android:text="1"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="#88FFFFFF"
+        android:layout_marginEnd="12dp"/>
+
+    <TextView
+        android:id="@+id/tvName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="CCTV-1"
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:gravity="start|center_vertical"/>
+
+</LinearLayout>

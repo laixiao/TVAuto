@@ -7,11 +7,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "xyz.mulin.tvauto"
+        applicationId = "mulin.tvauto.pro"
         minSdk = 19
         targetSdk = 35
-        versionCode = 33
-        versionName = "3.3"
+        versionCode = 50
+        versionName = "5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

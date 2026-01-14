@@ -1,65 +1,411 @@
-<!-- assets/add_channel_help.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <title>添加频道说明</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>频道导入动态教程</title>
     <style>
+        /* --- 全局设置 --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; /* 禁止滚动 */
+        }
+
         body {
-            font-family: sans-serif;
-            padding: 10px 15px;
-            line-height: 1.3;
-            background-color: #f9f9f9;
-            color: #333;
-            font-size: 14px;
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* 居中布局 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
         }
-        h1 {
-            color: #2c7;
-            margin-bottom: 8px;
-            font-size: 18px;
+
+        /* --- 核心容器调整：70% 宽，呼吸感 --- */
+        .container {
+            width: 70vw;   /* 宽度 70% */
+            height: 85vh;  /* 高度 85%，留出上下边界 */
+            /* 移除 max-width: 800px，允许大屏缩放 */
+            display: flex;
+            flex-direction: column;
+            gap: 2vh; /* 块之间的间距 */
         }
-        h3 {
-            margin: 10px 0 6px;
+
+        /* --- 卡片容器 --- */
+        .step-block {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            padding: 2vh 2vw; /* 适配单位 */
+            /* margin-bottom: 25px; -> 移除，改用 gap */
+            border: 2px solid #333; /* 稍微加粗 */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            position: relative;
+
+            /* 核心：自动撑满剩余高度 */
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h2 {
+            color: #FFC107;
+            font-size: 2.5vh; /* TV适配 */
+            margin-top: 0;
+            margin-bottom: 1.5vh;
+            border-left: 6px solid #FFC107;
+            padding-left: 10px;
+        }
+
+        /* --- 按键样式 --- */
+        ol {
+            padding-left: 20px;
+            line-height: 2;
+            margin: 0;
+            font-size: 2vh; /* TV适配 */
+        }
+       li {
+            margin-bottom: 1vh;
+        }
+        .key {
+            display: inline-block;
+            padding: 0.2vh 0.8vw;
+            margin: 0 2px;
+            border: 1px solid #666;
+            background-color: #333;
+            color: #FF5722;
             font-weight: bold;
-            font-size: 16px;
-        }
-        p {
-            margin: 6px 0;
-        }
-        code {
-            background-color: #eee;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 13px;
-        }
-        pre {
-            background-color: #f4f4f4;
-            padding: 6px 8px;
             border-radius: 4px;
-            overflow-x: auto;
-            font-size: 13px;
-            margin: 6px 0;
-            line-height: 1.2;
-            max-height: 140px;  /* 限制高度，避免撑开太多 */
+            font-family: monospace;
+            font-size: 0.9em;
+            box-shadow: 0 2px 0 #111;
+            transition: all 0.2s;
         }
+
+        .key.active {
+            background-color: #FF5722;
+            color: #fff;
+            transform: translateY(2px);
+            box-shadow: 0 0 0 #111;
+            border-color: #FF5722;
+        }
+
+        /* --- 对话框样式 --- */
+        .dialog {
+            background-color: #000;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 1.5vh 1.5vw;
+            display: flex;
+            align-items: center; /* 垂直居中 */
+            flex: 1; /* 撑满卡片剩余空间 */
+            max-height: 70%; /* 限制高度 */
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: center;
+        }
+
+        .edittext {
+            background-color: #222;
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: #fff;
+            font-family: monospace;
+            padding: 1.5vh;
+            /* min-height: 70px; -> 移除固定高度 */
+            font-size: 2.2vh; /* TV适配 */
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.4;
+            height: 100%; /* 撑满 */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        .edittext.hint-mode {
+            color: #777;
+            align-items: flex-start;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 2.2vh; /* TV适配 */
+            background-color: #4CAF50;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .import-btn {
+            margin-left: 1.5vw;
+            padding: 0 2.5vw;
+            background-color: #006CE0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            height: 6vh; /* TV适配 */
+            margin-top: 0;
+            transition: transform 0.1s;
+            font-size: 2vh; /* TV适配 */
+        }
+
+        .import-btn.clicked {
+            transform: scale(0.9);
+            background-color: #0056b3;
+        }
+
+        .info-tag {
+            margin-top: 1vh;
+            font-size: 1.8vh; /* TV适配 */
+            color: #666;
+        }
+
+        .status-highlight {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        /* --- 鼠标动画 (原 finger 改为 mouse) --- */
+        .finger {
+            position: absolute;
+            width: 4vh;  /* 尺寸用 vh */
+            height: 4vh;
+            /* 替换为鼠标箭头 SVG */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' stroke='black' stroke-width='1.5' d='M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.8c.45 0 .67-.54.35-.85L5.5 3.21z'/%3E%3C/svg%3E");
+            z-index: 100;
+            opacity: 0;
+            transition: all 0.5s ease;
+            pointer-events: none;
+            filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.5));
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        .finger.press {
+            transform: scale(0.85);
+        }
+
+        /* Step 3 成功提示 */
+        .toast {
+            position: absolute;
+            bottom: 8vh; /* 提高一点 */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.95);
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+            padding: 1.5vh 3vw;
+            border-radius: 50px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: bold;
+            font-size: 2.2vh; /* TV适配 */
+        }
+        .toast.show { opacity: 1; }
+
     </style>
 </head>
 <body>
-<h2>TVAuto 使用说明</h2>
-<p>目前没有任何频道可用，请按遥控器上的 <strong>菜单键 </strong> 频道管理</p>
-<h3>单次添加频道</h3>
-<p>输入频道名称和直播地址。</p>
-<pre>频道名称：CCTV-1 综合
-直播 URL：https://tv.cctv.com/live/cctv1/</pre>
-<h3>批量导入频道</h3>
-<p>每一条频道格式为：</p>
-<pre>"频道名称","频道地址";</pre>
-<p>用英文分号 <code>;</code> 结尾，频道名称和地址用英文双引号 <code>"</code> 包裹，用英文逗号 <code>,</code> 分隔。</p>
-<pre>
-"CCTV-1 综合","https://tv.cctv.com/live/cctv1/";"江苏卫视","https://live.jstv.com/";</pre>
-<h3>其他说明</h3>
-<p>上下滑动切换频道，长按屏幕隐藏/显示侧边按键</p>
-<h3>手机/平板点击左下角频道管理按钮</h3>
+
+<div class="container">
+
+    <div class="step-block" id="step1">
+        <h2>一 打开频道管理</h2>
+        <ol>
+            <li>按 <span class="key" id="k-menu">菜单键</span> → 打开 <b>频道管理</b> </li>
+            <li>或者按 <span class="key" id="k-center">中键</span> / <span class="key" id="k-right">右键</span> → 弹出频道列表 → 使用 <span class="key" id="k-ud">上下键</span> 光标移动到 <b>频道管理</b> → 按 <span class="key" id="k-ok">中键</span> 打开</li>
+        </ol>
+    </div>
+
+    <div class="step-block" id="step2">
+        <h2>二 批量频道填充</h2>
+        <div class="dialog">
+            <div class="input-wrapper">
+                <div class="edittext hint-mode" id="s2-input">
+                    批量导入: "名称","URL"; ... 留空导入默认
+                </div>
+                <div class="info-tag" id="s2-info">
+                    <span id="s2-status">...</span>
+                </div>
+            </div>
+            <button class="import-btn" id="s2-btn">导入</button>
+        </div>
+        <div class="finger" id="finger2"></div>
+    </div>
+
+    <div class="step-block" id="step3">
+        <h2>三 点击导入</h2>
+        <div class="dialog">
+            <div class="input-wrapper">
+                <div class="edittext" id="s3-input">
+                </div>
+            </div>
+            <button class="import-btn" id="s3-btn">导入</button>
+        </div>
+        <div class="finger" id="finger3"></div>
+        <div class="toast" id="toast">导入2个频道</div>
+    </div>
+
+</div>
+
+<script>
+    // --- 配置数据 ---
+    const MANUAL_TEXT = '"CCTV-1 综合","https://tv.cctv.com/live/cctv1/";"江苏卫视","https://live.jstv.com/";';
+    const DEFAULT_TEXT_MOCK = '"CCTV-1 综合","https://tv.cctv.com/live/cctv1/";"江苏卫视","https://live.jstv.com/";';
+    const TYPE_SPEED = 40; // 打字速度
+
+    // --- 工具函数 ---
+    const wait = (ms) => new Promise(r => setTimeout(r, ms));
+    const getEl = (id) => document.getElementById(id);
+
+    // 模拟手指点击的动作封装
+    async function clickAction(fingerId, btnId, containerId) {
+        const finger = getEl(fingerId);
+        const btn = getEl(btnId);
+        const container = getEl(containerId);
+
+        const btnRect = btn.getBoundingClientRect();
+        const contRect = container.getBoundingClientRect();
+
+        // 计算相对坐标
+        const top = btnRect.top - contRect.top + btnRect.height/2;
+        const left = btnRect.left - contRect.left + btnRect.width/2;
+
+        // 1. 移动到位置
+        finger.style.top = (top + 40) + 'px';
+        finger.style.left = (left + 40) + 'px';
+        finger.style.opacity = '1';
+        await wait(50);
+
+        finger.style.top = top + 'px';
+        finger.style.left = left + 'px';
+        await wait(800);
+
+        // 2. 按下
+        finger.classList.add('press');
+        btn.classList.add('clicked');
+        await wait(200);
+
+        // 3. 抬起
+        finger.classList.remove('press');
+        btn.classList.remove('clicked');
+        await wait(500);
+
+        // 4. 移开消失
+        finger.style.opacity = '0';
+    }
+
+    // --- 步骤逻辑 ---
+
+    async function runStep1() {
+        // 闪烁菜单键
+        const kMenu = getEl('k-menu');
+        kMenu.classList.add('active');
+        await wait(600);
+        kMenu.classList.remove('active');
+        await wait(400);
+
+        // 闪烁备选路径按键
+        const ids = ['k-center', 'k-right', 'k-ud', 'k-ok'];
+        for (let id of ids) {
+            getEl(id).classList.add('active');
+            await wait(300);
+            getEl(id).classList.remove('active');
+        }
+    }
+
+    async function runStep2() {
+        const input = getEl('s2-input');
+        const status = getEl('s2-status');
+
+        // === 场景 A: 留空 -> 点击 -> 自动填充 ===
+        status.innerHTML = "情况1：输入框留空 → 点击导入 → <span class='status-highlight'>自动填充默认频道</span>";
+
+        // 1. 初始化为 Hint 状态
+        input.innerText = '批量导入: "名称","URL"; ... \n留空导入默认频道';
+        input.className = 'edittext hint-mode';
+
+        await wait(1000);
+
+        // 2. 执行点击动作
+        await clickAction('finger2', 's2-btn', 'step2');
+
+        // 3. 点击后瞬间填充默认数据
+        input.className = 'edittext'; // 变亮
+        input.innerText = DEFAULT_TEXT_MOCK;
+
+        await wait(2500); // 展示自动填充的结果
+
+        // === 场景 B: 手动输入 ===
+        status.innerHTML = "情况2：手动输入 → <span class='status-highlight'>逐字输入频道</span>";
+
+        // 1. 清空输入框
+        input.innerText = '';
+        const cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        input.appendChild(cursor);
+
+        await wait(500);
+
+        // 2. 打字机效果输入
+        let currentText = "";
+        for (let char of MANUAL_TEXT) {
+            currentText += char;
+            input.innerText = currentText;
+            await wait(TYPE_SPEED);
+        }
+        input.innerHTML = currentText + '<span class="cursor"></span>';
+
+        await wait(2000);
+    }
+
+    async function runStep3() {
+        const input = getEl('s3-input');
+        const toast = getEl('toast');
+
+        // 预填好刚才手动输入的文字
+        input.innerText = MANUAL_TEXT;
+
+        // 执行点击
+        await clickAction('finger3', 's3-btn', 'step3');
+
+        // 显示成功弹窗
+        toast.classList.add('show');
+        await wait(2000);
+        toast.classList.remove('show');
+    }
+
+    // --- 主循环 ---
+    async function loop() {
+        while(true) {
+            // 复位 Step 2 状态
+            getEl('s2-input').innerHTML = '';
+
+            await runStep1();
+            await wait(500);
+
+            await runStep2();
+            await wait(500);
+
+            await runStep3();
+            await wait(1500);
+        }
+    }
+
+    loop();
+
+</script>
 </body>
 </html>
