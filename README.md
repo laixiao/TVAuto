@@ -19,8 +19,6 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
 
 ## 快速使用
 
-### 添加频道
-
 - 单个添加：输入频道名称和直播地址
 - 批量导入：格式如下（以英文分号结尾）
 
@@ -35,12 +33,8 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
   ```
 ---
 
-## 🎉 欢迎使用 & 反馈！
-
----
-
 ## 📷 截图
-<img width="1488" height="1129" alt="QQ_1768382354326" src="https://github.com/user-attachments/assets/0ea36dce-6761-435a-b845-14a08e159434" />
+<img width="1488" height="1129" alt="535521031-0ea36dce-6761-435a-b845-14a08e159434" src="https://github.com/user-attachments/assets/a5020396-c5b0-42a8-b4bd-2349e8ef1e6d" />
 <img width="1282" height="771" alt="QQ_1768382253761" src="https://github.com/user-attachments/assets/d49a846c-8962-4b87-a034-6c6a729cac0a" />
 <img width="1282" height="771" alt="QQ_1768382148944" src="https://github.com/user-attachments/assets/48c973c6-9fe0-4f1f-b959-f48507439d2d" />
 <img width="1282" height="771" alt="QQ_1768382171718" src="https://github.com/user-attachments/assets/bf5376c6-3c73-445f-9f11-6719417ea6cf" />
@@ -59,3 +53,6 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
 - 新增：长按屏幕隐藏/显示侧边按键
 - 新增：频道管理按钮，首次使用常驻，正常状态自动隐藏
 - 修复：全屏播放时虚拟按键、小横条无法隐藏的问题
+---
+## 🎉 欢迎使用 & 反馈！
+
