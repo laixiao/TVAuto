@@ -4,51 +4,20 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
 
 ---
 
-## 📦 v3.2 更新
-
-- 新增：安卓TV 图标
-
----
-
-## 📦 v3.1 更新
-
-- 修复：采用深色模式
-- 新增：更新按键
-
----
-
-## 📦 v3.0 更新
-
-- 新增：长按屏幕隐藏/显示侧边按键
-- 新增：频道管理按钮，首次使用常驻，正常状态自动隐藏
-- 修复：全屏播放时虚拟按键、小横条无法隐藏的问题
-
----
-
-## ⚙️ 功能概览
+## 功能概览
 
 - 支持手动添加或批量导入频道，只需提供名称和 URL
-- 理论兼容所有 16:9 视频网页
+- 理论兼容大部分 16:9 视频网页
 - 支持遥控器和触摸屏操作
-
 ---
 
-## 🚨 使用须知
-
+## 使用须知
 - 默认频道列表为示例用途，不保证可用性与合法性
 - 请用户自行核实、添加合规的频道
 - 使用过程中请遵守当地法律法规，开发者不承担任何法律责任
-
 ---
 
-## 📖 快速使用
-
-### 进入频道管理
-
-- 遥控器：**菜单键**
-- 手机/平板：点击左下角 **频道管理按钮**
-
-### 添加频道
+## 快速使用
 
 - 单个添加：输入频道名称和直播地址
 - 批量导入：格式如下（以英文分号结尾）
@@ -62,22 +31,28 @@ TVAuto 是一款基于 WebView 的电视直播浏览器，支持多设备（手�
   ```
   "CCTV-1 综合","https://tv.cctv.com/live/cctv1/";"江苏卫视","https://live.jstv.com/";
   ```
-
-### 常用操作
-
-- 上下滑动切换频道，长按屏幕显示/隐藏侧边按键
-- 遥控器数字键切换频道，确认键刷新页面
-
----
-
-## 🎉 欢迎使用 & 反馈！
-
 ---
 
 ## 📷 截图
+<img width="1488" height="1129" alt="535521031-0ea36dce-6761-435a-b845-14a08e159434" src="https://github.com/user-attachments/assets/a5020396-c5b0-42a8-b4bd-2349e8ef1e6d" />
+<img width="1282" height="771" alt="QQ_1768382253761" src="https://github.com/user-attachments/assets/d49a846c-8962-4b87-a034-6c6a729cac0a" />
+<img width="1282" height="771" alt="QQ_1768382148944" src="https://github.com/user-attachments/assets/48c973c6-9fe0-4f1f-b959-f48507439d2d" />
+<img width="1282" height="771" alt="QQ_1768382171718" src="https://github.com/user-attachments/assets/bf5376c6-3c73-445f-9f11-6719417ea6cf" />
+<img width="1282" height="771" alt="QQ_1768382206251" src="https://github.com/user-attachments/assets/f8391b4a-e519-4905-b632-b045c9380434" />
 
-![Collage_20250708_231622018](https://github.com/user-attachments/assets/4bd9dd1d-3b30-44cb-9162-a60cdf471346)
-![QQ_1748088193638](https://github.com/user-attachments/assets/b5ef3582-493f-4ec2-87dc-d2910bec98cf)
-![QQ_1748088907744](https://github.com/user-attachments/assets/3a4e7bdc-7b1d-412a-a4d0-e47d5ff0f7c3)
-![QQ_1747568731949](https://github.com/user-attachments/assets/c78207c3-6a9f-4f5a-a2ab-cae07f6931ea)
-![QQ_1748077658933](https://github.com/user-attachments/assets/596badb3-57e0-4c1e-893f-4bb57186dbcd)
+---
+## 📦 v5.0 更新
+- 全新设计界面
+---
+## 📦 v3.2 更新
+- 新增：安卓TV 图标
+## 📦 v3.1 更新
+- 修复：采用深色模式
+- 新增：更新按键
+## 📦 v3.0 更新
+- 新增：长按屏幕隐藏/显示侧边按键
+- 新增：频道管理按钮，首次使用常驻，正常状态自动隐藏
+- 修复：全屏播放时虚拟按键、小横条无法隐藏的问题
+---
+## 🎉 欢迎使用 & 反馈！
+
