@@ -34,7 +34,7 @@ TV Auto 是一款基于 WebView 的电视直播浏览器，支持多设备（手
 ---
 
 ## 📷 截图
-<img width="1488" height="1129" alt="535521031-0ea36dce-6761-435a-b845-14a08e159434" src="https://github.com/user-attachments/assets/a5020396-c5b0-42a8-b4bd-2349e8ef1e6d" />
+<img width="1488" height="1097" alt="535521031-0ea36dce-6761-435a-b845-14a08e159434" src="https://github.com/user-attachments/assets/d7448e0d-dfb2-4ce3-a860-ac7a724044ce" />
 <img width="1282" height="771" alt="QQ_1768382253761" src="https://github.com/user-attachments/assets/d49a846c-8962-4b87-a034-6c6a729cac0a" />
 <img width="1282" height="771" alt="QQ_1768382148944" src="https://github.com/user-attachments/assets/48c973c6-9fe0-4f1f-b959-f48507439d2d" />
 <img width="1282" height="771" alt="QQ_1768382171718" src="https://github.com/user-attachments/assets/bf5376c6-3c73-445f-9f11-6719417ea6cf" />
