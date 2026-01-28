@@ -272,10 +272,35 @@ public class MainActivity extends AppCompatActivity {
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36");
 
+        webView.setOnTouchListener((v, event) -> true);
+        webView.setOnKeyListener((v, keyCode, event) -> true);
+        webView.setOnGenericMotionListener((v, event) -> true);
         webView.setFocusable(false);
         webView.setFocusableInTouchMode(false);
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
+
+            @Override
+            public void onPageCommitVisible(WebView view, String url) {
+                if (url.startsWith("https://test.ustc.edu.cn/")) {
+                    String js =
+                            "(function(){" +
+                                    "var style=document.createElement('style');" +
+                                    "style.innerHTML=`" +
+                                    "body * { visibility:hidden !important; }" +
+                                    "#test, #test * { visibility:visible !important; }" +
+                                    "#test { position:absolute !important; top:0 !important;left: 0% !important;  }" +
+                                    "html, body { overflow:hidden !important; }" +
+                                    "`;" +
+                                    "document.head.appendChild(style);" +
+                                    "})();";
+
+                    view.evaluateJavascript(js, null);
+                }
+            }
+
+
+
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
@@ -360,6 +385,8 @@ public class MainActivity extends AppCompatActivity {
      * 处理物理按键事件
      * 实现了【双模兼容】：同时支持 电视遥控器按键 和 电脑键盘映射
      */
+    private long lastBackPressTime = 0; // 记录上一次返回键按下时间
+    private static final int BACK_PRESS_INTERVAL = 2000; // 2 秒内算双击
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         Log.d("keyCode",":"+keyCode);
@@ -455,6 +482,17 @@ public class MainActivity extends AppCompatActivity {
             case KeyEvent.KEYCODE_DPAD_DOWN:
             case KeyEvent.KEYCODE_S:
                 switchToNextChannel();
+                return true;
+
+            case KeyEvent.KEYCODE_BACK:
+                long now = System.currentTimeMillis();
+                if (now - lastBackPressTime < BACK_PRESS_INTERVAL) {
+                    // 双击确认退出
+                    finish();
+                } else {
+                    Toast.makeText(this, "再按一次返回退出", Toast.LENGTH_SHORT).show();
+                    lastBackPressTime = now;
+                }
                 return true;
         }
         return super.onKeyDown(keyCode, event);
