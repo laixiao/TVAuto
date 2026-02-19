@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;                // 核心播放器容器
     private View touchLayer;                // 覆盖在WebView上的透明触控层（用于手势）
     private RecyclerView rvChannels;        // 侧边栏频道列表
-    private LinearLayout btnSettings;       // 侧边栏顶部的“频道管理”按钮
+    private LinearLayout btnSettings;       // 侧边栏顶部的"频道管理"按钮
     private TextView tvOsd;                 // 屏幕左上角的 OSD (On-Screen Display) 提示
 
     // --- 数据与存储 ---
@@ -763,6 +763,19 @@ public class MainActivity extends AppCompatActivity {
         root.addView(createButtonPairRow(deleteBtn, updateBtn));
 
         // ===============================
+        // 3.5 应用设置按钮
+        // ===============================
+        MaterialButton appSettingsBtn = createCompactButton("应用设置", "#2E7D32");
+        int heightDp = 48;
+        float scale = getResources().getDisplayMetrics().density;
+        int heightPx = (int) (heightDp * scale + 0.5f);
+        LinearLayout.LayoutParams settingsBtnLp =
+                new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, heightPx);
+        settingsBtnLp.setMargins(6, 12, 6, 6);
+        appSettingsBtn.setLayoutParams(settingsBtnLp);
+        root.addView(appSettingsBtn);
+
+        // ===============================
         // 4. 关于信息
         // ===============================
         TextView info = new TextView(this);
@@ -800,6 +813,10 @@ public class MainActivity extends AppCompatActivity {
             Intent i = new Intent(Intent.ACTION_VIEW,
                     Uri.parse("https://pan.baidu.com/s/1ma_jq-9wbR4IQ5_lQO_Eng?pwd=5555"));
             startActivity(i);
+        });
+        appSettingsBtn.setOnClickListener(v -> {
+            dialog.dismiss();
+            startActivity(new Intent(MainActivity.this, SettingsActivity.class));
         });
     }
 
