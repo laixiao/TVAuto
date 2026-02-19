@@ -752,6 +752,19 @@ public class MainActivity extends AppCompatActivity {
 
         root.addView(createInputActionRow(batch, importBtn));
 
+        // ===============================
+        // 2.5 示例按钮（点击填入批量导入输入框）
+        // ===============================
+        TextView example1 = new TextView(this);
+        example1.setText("示例1：广东卫视 + 广东珠江");
+        example1.setTextColor(Color.parseColor("#5599DD"));
+        example1.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        example1.setPadding(8, 4, 0, 12);
+        example1.setClickable(true);
+        example1.setFocusable(true);
+        example1.setOnClickListener(v -> batch.setText(R.string.ExampleChannel1));
+        root.addView(example1);
+
         addStrongDivider(root);
 
         // ===============================
