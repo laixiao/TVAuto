@@ -27,6 +27,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.SslErrorHandler;
@@ -38,6 +39,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -52,6 +54,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+
+import org.videolan.libvlc.LibVLC;
+import org.videolan.libvlc.Media;
+import org.videolan.libvlc.MediaPlayer;
+import org.videolan.libvlc.util.VLCVideoLayout;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -74,11 +81,17 @@ public class MainActivity extends AppCompatActivity {
     // --- UI 组件 ---
     private DrawerLayout drawerLayout;      // 侧边栏容器
     private WebView webView;                // 核心播放器容器
+    private VLCVideoLayout playerView;
     private View touchLayer;                // 覆盖在WebView上的透明触控层（用于手势）
     private RecyclerView rvChannels;        // 侧边栏频道列表
     private LinearLayout btnSettings;       // 侧边栏顶部的"频道管理"按钮
     private LinearLayout btnDevTools;       // 侧边栏顶部的"开发者工具"按钮
     private TextView tvOsd;                 // 屏幕左上角的 OSD (On-Screen Display) 提示
+
+    private LibVLC libVLC;
+    private MediaPlayer vlcPlayer;
+    private String lastVlcPlayUrl;
+    private String currentPageUrl;
 
     // --- 数据与存储 ---
     private SharedPreferences configPrefs;  // 保存配置（如上次播放位置）
@@ -96,6 +109,10 @@ public class MainActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private ChannelAdapter adapter;         // 列表适配器
     private GestureDetector gestureDetector;// 手势识别器
+
+    private View customView;
+    private WebChromeClient.CustomViewCallback customViewCallback;
+    private FrameLayout fullscreenContainer;
 
     // --- 防抖与延迟任务配置 ---
     private int pendingChannelIndex = -1;           // 待切换的频道索引（防抖用）
@@ -119,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
     private final Runnable confirmChannelSwitchRunnable = () -> {
         if (channels != null && pendingChannelIndex >= 0 && pendingChannelIndex < channels.length) {
             Log.d("ChannelSwitch", "Loading URL for index: " + pendingChannelIndex);
-            webView.loadUrl(channels[pendingChannelIndex]);
+            loadChannelUrl(channels[pendingChannelIndex]);
         }
     };
 
@@ -191,6 +208,122 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         // 清理所有未执行的 Handler 任务，防止内存泄漏
         handler.removeCallbacksAndMessages(null);
+        releaseVlcPlayer();
+    }
+
+    private boolean isM3u8Url(String url) {
+        if (url == null) return false;
+        String u = url.toLowerCase();
+        return u.contains(".m3u8");
+    }
+
+    private void showVlcPlayer() {
+        if (playerView != null) playerView.setVisibility(View.VISIBLE);
+        if (webView != null) webView.setVisibility(View.GONE);
+    }
+
+    private void showWebView() {
+        if (playerView != null) playerView.setVisibility(View.GONE);
+        if (webView != null) webView.setVisibility(View.VISIBLE);
+    }
+
+    private void releaseVlcPlayer() {
+        try {
+            if (vlcPlayer != null) {
+                vlcPlayer.stop();
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (vlcPlayer != null) {
+                try {
+                    vlcPlayer.detachViews();
+                } catch (Exception ignored) {
+                }
+                vlcPlayer.release();
+            }
+        } catch (Exception ignored) {
+        }
+        vlcPlayer = null;
+
+        try {
+            if (libVLC != null) {
+                libVLC.release();
+            }
+        } catch (Exception ignored) {
+        }
+        libVLC = null;
+        lastVlcPlayUrl = null;
+    }
+
+    private void playM3u8WithVlc(String url) {
+        playM3u8WithVlc(url, null);
+    }
+
+    private void playM3u8WithVlc(String url, String referer) {
+        if (url == null || url.isEmpty()) return;
+
+        lastVlcPlayUrl = url;
+
+        if (devConsoleEnabled) {
+            addDevLog("VLC.play url=" + url + (referer != null ? (" referer=" + referer) : ""));
+        }
+
+        showVlcPlayer();
+
+        if (libVLC == null) {
+            java.util.ArrayList<String> args = new java.util.ArrayList<>();
+            args.add("--no-drop-late-frames");
+            args.add("--no-skip-frames");
+            args.add("--network-caching=1500");
+            libVLC = new LibVLC(this, args);
+        }
+        if (vlcPlayer == null) {
+            vlcPlayer = new MediaPlayer(libVLC);
+            try {
+                if (playerView != null) {
+                    vlcPlayer.attachViews(playerView, null, false, false);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        try {
+            if (vlcPlayer.isPlaying()) {
+                vlcPlayer.stop();
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Media media = new Media(libVLC, Uri.parse(url));
+            media.addOption(":http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36");
+            if (referer != null && !referer.isEmpty()) {
+                media.addOption(":http-referrer=" + referer);
+            }
+            vlcPlayer.setMedia(media);
+            media.release();
+            vlcPlayer.play();
+        } catch (Exception e) {
+            if (devConsoleEnabled) {
+                addDevLog("VLC.error msg=" + e.getMessage());
+            }
+        }
+    }
+
+    private void loadChannelUrl(String url) {
+        if (isM3u8Url(url)) {
+            try {
+                if (webView != null) webView.stopLoading();
+            } catch (Exception ignored) {
+            }
+            playM3u8WithVlc(url);
+            return;
+        }
+
+        releaseVlcPlayer();
+        showWebView();
+        webView.loadUrl(url);
     }
 
     /**
@@ -218,6 +351,7 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout.setScrimColor(Color.TRANSPARENT); // 【视觉优化】去掉侧边栏打开时的阴影遮罩
 
         webView = findViewById(R.id.webView);
+        playerView = findViewById(R.id.playerView);
         touchLayer = findViewById(R.id.touchLayer);
         rvChannels = findViewById(R.id.rvChannels);
         btnSettings = findViewById(R.id.btnSettings);
@@ -327,6 +461,56 @@ public class MainActivity extends AppCompatActivity {
         webView.setFocusableInTouchMode(false);
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
+            public void onShowCustomView(View view, CustomViewCallback callback) {
+                if (customView != null) {
+                    callback.onCustomViewHidden();
+                    return;
+                }
+                customView = view;
+                customViewCallback = callback;
+
+                FrameLayout decor = (FrameLayout) getWindow().getDecorView();
+                fullscreenContainer = new FrameLayout(MainActivity.this);
+                fullscreenContainer.setBackgroundColor(Color.BLACK);
+                fullscreenContainer.addView(customView, new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                ));
+                decor.addView(fullscreenContainer, new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                ));
+
+                webView.setVisibility(View.GONE);
+                enableImmersiveMode();
+            }
+
+            @Override
+            public void onHideCustomView() {
+                if (customView == null) return;
+
+                try {
+                    ViewParent parent = fullscreenContainer != null ? fullscreenContainer.getParent() : null;
+                    if (parent instanceof ViewGroup) {
+                        ((ViewGroup) parent).removeView(fullscreenContainer);
+                    }
+                } catch (Exception ignored) {
+                }
+
+                fullscreenContainer = null;
+                customView = null;
+
+                try {
+                    if (customViewCallback != null) customViewCallback.onCustomViewHidden();
+                } catch (Exception ignored) {
+                }
+                customViewCallback = null;
+
+                webView.setVisibility(View.VISIBLE);
+                enableImmersiveMode();
+            }
+
+            @Override
             public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
                 if (devConsoleEnabled && consoleMessage != null) {
                     String msg = "console(" + consoleMessage.messageLevel() + ") " + consoleMessage.message() + " (" + consoleMessage.sourceId() + ":" + consoleMessage.lineNumber() + ")";
@@ -336,6 +520,35 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         webView.setWebViewClient(new WebViewClient() {
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                try {
+                    if (isM3u8Url(url)) {
+                        String referer = currentPageUrl;
+                        if (devConsoleEnabled) addDevLog("Intercept(m3u8 legacy): " + url);
+                        handler.post(() -> playM3u8WithVlc(url, referer));
+                    }
+                } catch (Exception ignored) {
+                }
+                return super.shouldInterceptRequest(view, url);
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                try {
+                    if (request != null && request.getUrl() != null) {
+                        String u = request.getUrl().toString();
+                        if (isM3u8Url(u)) {
+                            String referer = currentPageUrl;
+                            if (devConsoleEnabled) addDevLog("Intercept(m3u8): " + u);
+                            handler.post(() -> playM3u8WithVlc(u, referer));
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                return super.shouldInterceptRequest(view, request);
+            }
 
             @Override
             public void onPageCommitVisible(WebView view, String url) {
@@ -361,6 +574,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
+                currentPageUrl = url;
                 if (devConsoleEnabled) addDevLog("onPageStarted: " + url);
                 injectVideoResizeJs(view);
             }
@@ -377,6 +591,52 @@ public class MainActivity extends AppCompatActivity {
                         injectVideoResizeJs(view);
                     }
                 });
+
+                view.evaluateJavascript(
+                        "(function(){" +
+                                "try{" +
+                                "var v=document.querySelector('video');" +
+                                "if(!v)return '';" +
+                                "var s=v.currentSrc||v.src||'';" +
+                                "if(!s){var so=v.querySelector('source'); if(so&&so.src)s=so.src;}" +
+                                "return s||'';" +
+                                "}catch(e){return '';}" +
+                                "})()",
+                        srcValue -> {
+                            if (srcValue == null) return;
+                            String src = srcValue;
+                            if (src.length() >= 2 && src.startsWith("\"") && src.endsWith("\"")) {
+                                src = src.substring(1, src.length() - 1);
+                            }
+                            if (isM3u8Url(src)) {
+                                if (devConsoleEnabled) addDevLog("Extract(video src m3u8): " + src);
+                                playM3u8WithVlc(src, url);
+                            }
+                        }
+                );
+
+                view.evaluateJavascript(
+                        "(function(){" +
+                                "try{" +
+                                "var h=(document.documentElement&&document.documentElement.innerHTML)||'';" +
+                                "if(!h||h.indexOf('.m3u8')<0)return '';" +
+                                "h=h.replace(/\\u002F/g,'/');h=h.split('\\\\/').join('/');" +
+                                "var m=h.match(/https?:\\/\\/[^\\s\"'<>\\)]+?\\.m3u8[^\\s\"'<>\\)]*/i);" +
+                                "return (m&&m[0])?m[0]:'';" +
+                                "}catch(e){return '';}" +
+                                "})()",
+                        m3u8Value -> {
+                            if (m3u8Value == null) return;
+                            String m3u8 = m3u8Value;
+                            if (m3u8.length() >= 2 && m3u8.startsWith("\"") && m3u8.endsWith("\"")) {
+                                m3u8 = m3u8.substring(1, m3u8.length() - 1);
+                            }
+                            if (isM3u8Url(m3u8)) {
+                                if (devConsoleEnabled) addDevLog("Extract(innerHTML m3u8): " + m3u8);
+                                playM3u8WithVlc(m3u8, url);
+                            }
+                        }
+                );
             }
 
             @Override
@@ -494,6 +754,19 @@ public class MainActivity extends AppCompatActivity {
                         "try{" +
                         "if(window.__TVAUTO_FULLSCREEN_PATCHED__)return;" +
                         "window.__TVAUTO_FULLSCREEN_PATCHED__=true;" +
+                        "function __tvAutoLog(msg){try{console.log('[TVAUTO] '+msg);}catch(e){}}" +
+                        "try{" +
+                        "var v0=document.querySelector('video');" +
+                        "if(v0 && !v0.__TVAUTO_DIAG__){" +
+                        "v0.__TVAUTO_DIAG__=true;" +
+                        "var evs=['loadstart','loadedmetadata','canplay','canplaythrough','playing','pause','waiting','stalled','suspend','abort','ended','emptied','error'];" +
+                        "evs.forEach(function(ev){v0.addEventListener(ev,function(){" +
+                        "var err=v0.error?('code='+v0.error.code):'null';" +
+                        "__tvAutoLog('ev='+ev+' src='+v0.currentSrc+' readyState='+v0.readyState+' networkState='+v0.networkState+' error='+err);" +
+                        "});});" +
+                        "__tvAutoLog('canPlay m3u8='+v0.canPlayType('application/vnd.apple.mpegurl')+' canPlay mp4='+v0.canPlayType('video/mp4'));" +
+                        "}" +
+                        "}catch(e){}" +
                         "var st=document.createElement('style');" +
                         "st.innerHTML='html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;}" +
                         "*{overscroll-behavior:none!important;}" +
@@ -502,19 +775,38 @@ public class MainActivity extends AppCompatActivity {
                         "document.documentElement.style.overflow='hidden';" +
                         "document.body&&(document.body.style.overflow='hidden');" +
                         "var clicked=false;" +
-                        "function findBtn(){return document.querySelector('button.vjs-fullscreen-control,button[title=\"全屏\"],.vjs-fullscreen-control');}" +
-                        "function tryClick(){" +
-                        "if(clicked||window.__TVAUTO_FULLSCREEN_CLICKED__)return;" +
-                        "var b=findBtn();" +
-                        "if(b&&b.getAttribute('aria-disabled')!=='true'){clicked=true;window.__TVAUTO_FULLSCREEN_CLICKED__=true;try{b.click();}catch(e){}}" +
+                        "function dispatchClick(el){" +
+                        "try{el.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true,view:window}));}catch(e){}" +
+                        "try{el.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,cancelable:true,view:window}));}catch(e){}" +
+                        "try{el.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));}catch(e){}" +
+                        "try{el.click();}catch(e){}" +
                         "}" +
-                        "tryClick();" +
+                        "function findFullscreenBtn(){" +
+                        "return document.querySelector('button.vjs-fullscreen-control,button[title=\\\"全屏\\\"],.vjs-fullscreen-control,button[aria-label*=\\\"全屏\\\"],button[title*=\\\"全屏\\\"],button[class*=\\\"fullscreen\\\"],.fullscreen,.fullScreen,.icon-fullscreen');" +
+                        "}" +
+                        "function tryRequestFullscreen(){" +
+                        "try{" +
+                        "var v=document.querySelector('video');" +
+                        "var el=v||document.documentElement;" +
+                        "if(!el)return false;" +
+                        "var fn=el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;" +
+                        "if(fn){fn.call(el);return true;}" +
+                        "}catch(e){}" +
+                        "return false;" +
+                        "}" +
+                        "function tryEnter(){" +
+                        "if(clicked||window.__TVAUTO_FULLSCREEN_CLICKED__)return;" +
+                        "var b=findFullscreenBtn();" +
+                        "if(b&&b.getAttribute('aria-disabled')!=='true'){dispatchClick(b);clicked=true;window.__TVAUTO_FULLSCREEN_CLICKED__=true;return;}" +
+                        "if(tryRequestFullscreen()){clicked=true;window.__TVAUTO_FULLSCREEN_CLICKED__=true;}" +
+                        "}" +
+                        "tryEnter();" +
                         "var start=Date.now();" +
-                        "var t=setInterval(function(){tryClick();if(clicked||Date.now()-start>12000){clearInterval(t);}},500);" +
+                        "var t=setInterval(function(){tryEnter();if(clicked||Date.now()-start>20000){clearInterval(t);}},400);" +
                         "if(window.MutationObserver){" +
-                        "var mo=new MutationObserver(function(){tryClick();});" +
+                        "var mo=new MutationObserver(function(){tryEnter();});" +
                         "mo.observe(document.documentElement||document.body,{childList:true,subtree:true,attributes:true});" +
-                        "setTimeout(function(){try{mo.disconnect();}catch(e){}},13000);" +
+                        "setTimeout(function(){try{mo.disconnect();}catch(e){}},21000);" +
                         "}" +
                         "}catch(e){}" +
                         "})();";
@@ -753,8 +1045,7 @@ public class MainActivity extends AppCompatActivity {
         handler.removeCallbacks(hideOsdRunnable);
         handler.postDelayed(hideOsdRunnable, 3000);
 
-        // 立即加载网页
-        webView.loadUrl(channels[index]);
+        loadChannelUrl(channels[index]);
     }
 
     // 保存当前频道索引到 SharedPreferences

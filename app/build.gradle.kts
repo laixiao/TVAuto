@@ -13,6 +13,8 @@ android {
         versionCode = 50
         versionName = "5.0"
 
+        multiDexEnabled = true
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -37,6 +39,11 @@ dependencies {
     implementation(libs.material.v190)
     implementation(libs.appcompat)
     implementation(libs.material)
+
+    implementation("androidx.multidex:multidex:2.0.1")
+
+    implementation("org.videolan.android:libvlc-all:3.5.1")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
