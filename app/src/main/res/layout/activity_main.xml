@@ -110,6 +110,50 @@
 
         <Space android:layout_width="match_parent" android:layout_height="10dp"/>
 
+        <LinearLayout
+            android:id="@+id/btnDevTools"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical|start"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:focusable="true"
+            android:clickable="true"
+            android:visibility="gone"
+            android:background="@drawable/selector_channel_card">
+
+            <View
+                android:layout_width="4dp"
+                android:layout_height="16dp"
+                android:visibility="invisible"
+                android:layout_marginEnd="10dp"/>
+
+            <TextView
+                android:layout_width="32dp"
+                android:layout_height="22dp"
+                android:background="@drawable/bg_number_badge"
+                android:gravity="center"
+                android:text="DEV"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#AAFFFFFF"
+                android:layout_marginEnd="10dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="开发者工具"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+
+        <Space android:layout_width="match_parent" android:layout_height="10dp"/>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"

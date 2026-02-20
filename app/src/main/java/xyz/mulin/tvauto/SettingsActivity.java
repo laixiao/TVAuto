@@ -22,6 +22,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private SharedPreferences settingsPrefs;
     private Switch switchAutoStart;
+    private Switch switchDevConsole;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,14 +41,20 @@ public class SettingsActivity extends AppCompatActivity {
     private void initViews() {
         switchAutoStart = findViewById(R.id.switchAutoStart);
         LinearLayout rowAutoStart = findViewById(R.id.rowAutoStart);
+        switchDevConsole = findViewById(R.id.switchDevConsole);
+        LinearLayout rowDevConsole = findViewById(R.id.rowDevConsole);
         TextView btnBack = findViewById(R.id.btnBack);
 
         // 读取当前设置
         boolean autoStart = settingsPrefs.getBoolean("auto_start_on_boot", false);
         switchAutoStart.setChecked(autoStart);
 
+        boolean devConsole = settingsPrefs.getBoolean("dev_console_enabled", false);
+        switchDevConsole.setChecked(devConsole);
+
         // 点击整行切换开关
         rowAutoStart.setOnClickListener(v -> toggleAutoStart());
+        rowDevConsole.setOnClickListener(v -> toggleDevConsole());
 
         // 返回按钮
         btnBack.setOnClickListener(v -> finish());
@@ -71,12 +78,26 @@ public class SettingsActivity extends AppCompatActivity {
                 v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(150).start();
             }
         });
+
+        rowDevConsole.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                v.animate().scaleX(1.02f).scaleY(1.02f).setDuration(150).start();
+            } else {
+                v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(150).start();
+            }
+        });
     }
 
     private void toggleAutoStart() {
         boolean newValue = !switchAutoStart.isChecked();
         switchAutoStart.setChecked(newValue);
         settingsPrefs.edit().putBoolean("auto_start_on_boot", newValue).apply();
+    }
+
+    private void toggleDevConsole() {
+        boolean newValue = !switchDevConsole.isChecked();
+        switchDevConsole.setChecked(newValue);
+        settingsPrefs.edit().putBoolean("dev_console_enabled", newValue).apply();
     }
 
     @Override

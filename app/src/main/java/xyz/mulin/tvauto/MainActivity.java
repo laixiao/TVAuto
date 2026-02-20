@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
+import android.net.http.SslError;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -27,6 +28,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.webkit.ConsoleMessage;
+import android.webkit.SslErrorHandler;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -71,11 +77,17 @@ public class MainActivity extends AppCompatActivity {
     private View touchLayer;                // 覆盖在WebView上的透明触控层（用于手势）
     private RecyclerView rvChannels;        // 侧边栏频道列表
     private LinearLayout btnSettings;       // 侧边栏顶部的"频道管理"按钮
+    private LinearLayout btnDevTools;       // 侧边栏顶部的"开发者工具"按钮
     private TextView tvOsd;                 // 屏幕左上角的 OSD (On-Screen Display) 提示
 
     // --- 数据与存储 ---
     private SharedPreferences configPrefs;  // 保存配置（如上次播放位置）
     private SharedPreferences programPrefs; // 保存用户自定义频道数据
+    private SharedPreferences settingsPrefs; // 保存设置（如开发者控制台开关）
+    private boolean devConsoleEnabled;
+    private final StringBuilder devConsoleBuffer = new StringBuilder(32 * 1024);
+    private AlertDialog devConsoleDialog;
+    private TextView devConsoleTextView;
     private final LinkedHashMap<String, String> channelsMap = new LinkedHashMap<>(); // 内存中的频道数据 (URL -> Name)
     private String[] channels;              // 频道 URL 数组（用于通过索引快速访问）
     private int currentChannelIndex = 0;    // 当前播放的频道索引
@@ -134,6 +146,8 @@ public class MainActivity extends AppCompatActivity {
         // 初始化存储
         configPrefs = getSharedPreferences("TVAuto_Config", MODE_PRIVATE);
         programPrefs = getSharedPreferences("TVAuto_Program", Context.MODE_PRIVATE);
+        settingsPrefs = getSharedPreferences("TVAuto_Settings", MODE_PRIVATE);
+        devConsoleEnabled = settingsPrefs.getBoolean("dev_console_enabled", false);
 
         // 加载数据与恢复状态
         loadUserChannels();
@@ -159,6 +173,17 @@ public class MainActivity extends AppCompatActivity {
         super.onWindowFocusChanged(hasFocus);
         // 确保应用失去焦点再回来时（如弹窗关闭后），依然保持沉浸全屏
         if (hasFocus) enableImmersiveMode();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (settingsPrefs != null) {
+            devConsoleEnabled = settingsPrefs.getBoolean("dev_console_enabled", false);
+            if (btnDevTools != null) {
+                btnDevTools.setVisibility(devConsoleEnabled ? View.VISIBLE : View.GONE);
+            }
+        }
     }
 
     @Override
@@ -196,7 +221,30 @@ public class MainActivity extends AppCompatActivity {
         touchLayer = findViewById(R.id.touchLayer);
         rvChannels = findViewById(R.id.rvChannels);
         btnSettings = findViewById(R.id.btnSettings);
+        btnDevTools = findViewById(R.id.btnDevTools);
         tvOsd = findViewById(R.id.tvOsd);
+
+        if (btnDevTools != null) {
+            btnDevTools.setVisibility(devConsoleEnabled ? View.VISIBLE : View.GONE);
+            btnDevTools.setOnClickListener(v -> {
+                resetAutoTimer();
+                showDevConsoleDialog();
+            });
+            btnDevTools.setOnFocusChangeListener((v, hasFocus) -> {
+                TextView tvBadge = (TextView) btnDevTools.getChildAt(1);
+                TextView tvTitle = (TextView) btnDevTools.getChildAt(2);
+                if (hasFocus) {
+                    tvTitle.setTextColor(Color.BLACK);
+                    tvBadge.setTextColor(Color.DKGRAY);
+                    v.animate().scaleX(1.02f).scaleY(1.02f).setDuration(150).start();
+                    v.setBackgroundResource(R.drawable.selector_channel_card);
+                } else {
+                    tvTitle.setTextColor(Color.WHITE);
+                    tvBadge.setTextColor(Color.parseColor("#AAFFFFFF"));
+                    v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(150).start();
+                }
+            });
+        }
 
         // 配置列表
         rvChannels.setLayoutManager(new LinearLayoutManager(this));
@@ -277,7 +325,16 @@ public class MainActivity extends AppCompatActivity {
         webView.setOnGenericMotionListener((v, event) -> true);
         webView.setFocusable(false);
         webView.setFocusableInTouchMode(false);
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                if (devConsoleEnabled && consoleMessage != null) {
+                    String msg = "console(" + consoleMessage.messageLevel() + ") " + consoleMessage.message() + " (" + consoleMessage.sourceId() + ":" + consoleMessage.lineNumber() + ")";
+                    addDevLog(msg);
+                }
+                return super.onConsoleMessage(consoleMessage);
+            }
+        });
         webView.setWebViewClient(new WebViewClient() {
 
             @Override
@@ -304,12 +361,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
+                if (devConsoleEnabled) addDevLog("onPageStarted: " + url);
                 injectVideoResizeJs(view);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                if (devConsoleEnabled) addDevLog("onPageFinished: " + url);
                 view.evaluateJavascript("window.__VIDEO_RESIZE_INJECTED__", value -> {
                     if ("true".equals(value)) {
                         Log.d("TJS", "onPageStarted 阶段注入成功");
@@ -319,7 +378,109 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                if (devConsoleEnabled) {
+                    String url = request != null && request.getUrl() != null ? request.getUrl().toString() : "";
+                    String desc = error != null && error.getDescription() != null ? error.getDescription().toString() : "";
+                    addDevLog("onReceivedError: " + url + " code=" + (error != null ? error.getErrorCode() : -1) + " desc=" + desc);
+                }
+            }
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                if (devConsoleEnabled) addDevLog("onReceivedError(legacy): " + failingUrl + " code=" + errorCode + " desc=" + description);
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+                super.onReceivedHttpError(view, request, errorResponse);
+                if (devConsoleEnabled) {
+                    String url = request != null && request.getUrl() != null ? request.getUrl().toString() : "";
+                    addDevLog("onReceivedHttpError: " + url + " status=" + (errorResponse != null ? errorResponse.getStatusCode() : -1));
+                }
+            }
+
+            @Override
+            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                super.onReceivedSslError(view, handler, error);
+                if (devConsoleEnabled) addDevLog("onReceivedSslError: " + (error != null ? error.toString() : ""));
+            }
         });
+    }
+
+    private void addDevLog(String msg) {
+        if (!devConsoleEnabled) return;
+        String line = System.currentTimeMillis() + "  " + msg + "\n";
+        if (devConsoleBuffer.length() + line.length() > 200_000) {
+            devConsoleBuffer.delete(0, Math.min(devConsoleBuffer.length(), 60_000));
+        }
+        devConsoleBuffer.append(line);
+        if (devConsoleTextView != null) {
+            devConsoleTextView.setText(devConsoleBuffer.toString());
+            View parent = (View) devConsoleTextView.getParent();
+            if (parent instanceof ScrollView) {
+                ((ScrollView) parent).post(() -> ((ScrollView) parent).fullScroll(View.FOCUS_DOWN));
+            }
+        }
+    }
+
+    private void showDevConsoleDialog() {
+        if (!devConsoleEnabled) return;
+
+        if (devConsoleDialog != null && devConsoleDialog.isShowing()) {
+            return;
+        }
+
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        int pad = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+        root.setPadding(pad, pad, pad, pad);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+
+        MaterialButton btnClear = new MaterialButton(this);
+        btnClear.setText("清空");
+        btnClear.setOnClickListener(v -> {
+            devConsoleBuffer.setLength(0);
+            addDevLog("(cleared)");
+        });
+
+        MaterialButton btnClose = new MaterialButton(this);
+        btnClose.setText("关闭");
+        btnClose.setOnClickListener(v -> {
+            if (devConsoleDialog != null) devConsoleDialog.dismiss();
+        });
+
+        actions.addView(btnClear);
+        actions.addView(btnClose);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0);
+        scrollLp.weight = 1;
+        scroll.setLayoutParams(scrollLp);
+
+        devConsoleTextView = new TextView(this);
+        devConsoleTextView.setTextColor(Color.WHITE);
+        devConsoleTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        devConsoleTextView.setMovementMethod(new ScrollingMovementMethod());
+        devConsoleTextView.setText(devConsoleBuffer.toString());
+        scroll.addView(devConsoleTextView, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        root.addView(actions, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        root.addView(scroll);
+
+        devConsoleDialog = new AlertDialog.Builder(this)
+                .setTitle("开发者控制台")
+                .setView(root)
+                .setOnDismissListener(d -> devConsoleTextView = null)
+                .create();
+        devConsoleDialog.show();
     }
     // 注入 JavaScript  (全屏)
     private void injectVideoResizeJs(WebView view) {
@@ -329,7 +490,35 @@ public class MainActivity extends AppCompatActivity {
             try {
                 byte[] decodedBytes = Base64.decode(encodedJs, Base64.DEFAULT);
                 String jsCode = new String(decodedBytes);
-                view.evaluateJavascript(jsCode, null);
+                String tvAutoFullscreenJs = "(function(){" +
+                        "try{" +
+                        "if(window.__TVAUTO_FULLSCREEN_PATCHED__)return;" +
+                        "window.__TVAUTO_FULLSCREEN_PATCHED__=true;" +
+                        "var st=document.createElement('style');" +
+                        "st.innerHTML='html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;}" +
+                        "*{overscroll-behavior:none!important;}" +
+                        "video{width:100vw!important;height:100vh!important;max-width:100vw!important;max-height:100vh!important;object-fit:cover!important;background:#000!important;}';" +
+                        "document.head&&document.head.appendChild(st);" +
+                        "document.documentElement.style.overflow='hidden';" +
+                        "document.body&&(document.body.style.overflow='hidden');" +
+                        "var clicked=false;" +
+                        "function findBtn(){return document.querySelector('button.vjs-fullscreen-control,button[title=\"全屏\"],.vjs-fullscreen-control');}" +
+                        "function tryClick(){" +
+                        "if(clicked||window.__TVAUTO_FULLSCREEN_CLICKED__)return;" +
+                        "var b=findBtn();" +
+                        "if(b&&b.getAttribute('aria-disabled')!=='true'){clicked=true;window.__TVAUTO_FULLSCREEN_CLICKED__=true;try{b.click();}catch(e){}}" +
+                        "}" +
+                        "tryClick();" +
+                        "var start=Date.now();" +
+                        "var t=setInterval(function(){tryClick();if(clicked||Date.now()-start>12000){clearInterval(t);}},500);" +
+                        "if(window.MutationObserver){" +
+                        "var mo=new MutationObserver(function(){tryClick();});" +
+                        "mo.observe(document.documentElement||document.body,{childList:true,subtree:true,attributes:true});" +
+                        "setTimeout(function(){try{mo.disconnect();}catch(e){}},13000);" +
+                        "}" +
+                        "}catch(e){}" +
+                        "})();";
+                view.evaluateJavascript(jsCode + "\n" + tvAutoFullscreenJs, null);
             } catch (Exception e) {
                 e.printStackTrace();
             }
