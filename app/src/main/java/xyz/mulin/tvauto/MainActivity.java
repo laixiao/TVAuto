@@ -204,6 +204,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        stopWebViewVideoPlayback();
+        try {
+            if (vlcPlayer != null) {
+                vlcPlayer.pause();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         // 清理所有未执行的 Handler 任务，防止内存泄漏
@@ -215,6 +227,55 @@ public class MainActivity extends AppCompatActivity {
         if (url == null) return false;
         String u = url.toLowerCase();
         return u.contains(".m3u8");
+    }
+
+    private void stopWebViewVideoPlayback() {
+        if (webView == null) return;
+        try {
+            webView.evaluateJavascript(
+                    "(function(){try{" +
+                            "var vs=document.querySelectorAll('video');" +
+                            "for(var i=0;i<vs.length;i++){" +
+                            "try{vs[i].pause();}catch(e){}" +
+                            "try{vs[i].muted=true;}catch(e){}" +
+                            "}" +
+                            "}catch(e){}" +
+                            "})();",
+                    null
+            );
+        } catch (Exception ignored) {
+        }
+        try {
+            webView.stopLoading();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void forceExitWebViewFullscreen() {
+        if (customView == null) return;
+
+        try {
+            ViewParent parent = fullscreenContainer != null ? fullscreenContainer.getParent() : null;
+            if (parent instanceof ViewGroup) {
+                ((ViewGroup) parent).removeView(fullscreenContainer);
+            }
+        } catch (Exception ignored) {
+        }
+
+        fullscreenContainer = null;
+        customView = null;
+
+        try {
+            if (customViewCallback != null) customViewCallback.onCustomViewHidden();
+        } catch (Exception ignored) {
+        }
+        customViewCallback = null;
+
+        try {
+            if (webView != null) webView.setVisibility(View.VISIBLE);
+        } catch (Exception ignored) {
+        }
+        enableImmersiveMode();
     }
 
     private void showVlcPlayer() {
@@ -269,6 +330,8 @@ public class MainActivity extends AppCompatActivity {
             addDevLog("VLC.play url=" + url + (referer != null ? (" referer=" + referer) : ""));
         }
 
+        stopWebViewVideoPlayback();
+        forceExitWebViewFullscreen();
         showVlcPlayer();
 
         if (libVLC == null) {
@@ -1236,7 +1299,7 @@ public class MainActivity extends AppCompatActivity {
         // 2.5 示例按钮（点击填入批量导入输入框）
         // ===============================
         TextView example1 = new TextView(this);
-        example1.setText("示例1：广东卫视 + 广东珠江");
+        example1.setText("示例1：广东相关台");
         example1.setTextColor(Color.parseColor("#5599DD"));
         example1.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         example1.setPadding(8, 4, 0, 12);
