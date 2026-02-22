@@ -105,6 +105,9 @@ public class MainActivity extends AppCompatActivity {
     private String[] channels;              // 频道 URL 数组（用于通过索引快速访问）
     private int currentChannelIndex = 0;    // 当前播放的频道索引
 
+    private int channelSwitchToken = 0;
+    private int activeSwitchToken = 0;
+
     // --- 逻辑工具 ---
     private final Handler handler = new Handler(Looper.getMainLooper());
     private ChannelAdapter adapter;         // 列表适配器
@@ -139,6 +142,18 @@ public class MainActivity extends AppCompatActivity {
             loadChannelUrl(channels[pendingChannelIndex]);
         }
     };
+
+    private boolean isActiveToken(int token) {
+        return token == activeSwitchToken;
+    }
+
+    private void playM3u8WithVlcIfActive(String url, String referer, int token) {
+        if (!isActiveToken(token)) {
+            if (devConsoleEnabled) addDevLog("Drop stale m3u8 callback token=" + token + " active=" + activeSwitchToken);
+            return;
+        }
+        playM3u8WithVlc(url, referer);
+    }
 
     // 数字键选台缓存
     private int digitBuffer = -1;      // 缓存输入的数字
@@ -375,6 +390,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadChannelUrl(String url) {
+        activeSwitchToken = ++channelSwitchToken;
         if (isM3u8Url(url)) {
             try {
                 if (webView != null) webView.stopLoading();
@@ -586,11 +602,12 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                final int token = activeSwitchToken;
                 try {
                     if (isM3u8Url(url)) {
                         String referer = currentPageUrl;
                         if (devConsoleEnabled) addDevLog("Intercept(m3u8 legacy): " + url);
-                        handler.post(() -> playM3u8WithVlc(url, referer));
+                        handler.post(() -> playM3u8WithVlcIfActive(url, referer, token));
                     }
                 } catch (Exception ignored) {
                 }
@@ -599,13 +616,14 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                final int token = activeSwitchToken;
                 try {
                     if (request != null && request.getUrl() != null) {
                         String u = request.getUrl().toString();
                         if (isM3u8Url(u)) {
                             String referer = currentPageUrl;
                             if (devConsoleEnabled) addDevLog("Intercept(m3u8): " + u);
-                            handler.post(() -> playM3u8WithVlc(u, referer));
+                            handler.post(() -> playM3u8WithVlcIfActive(u, referer, token));
                         }
                     }
                 } catch (Exception ignored) {
@@ -637,16 +655,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
+                final int token = activeSwitchToken;
                 currentPageUrl = url;
                 if (devConsoleEnabled) addDevLog("onPageStarted: " + url);
-                injectVideoResizeJs(view);
+                if (isActiveToken(token)) {
+                    injectVideoResizeJs(view);
+                }
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                final int token = activeSwitchToken;
                 if (devConsoleEnabled) addDevLog("onPageFinished: " + url);
                 view.evaluateJavascript("window.__VIDEO_RESIZE_INJECTED__", value -> {
+                    if (!isActiveToken(token)) return;
                     if ("true".equals(value)) {
                         Log.d("TJS", "onPageStarted 阶段注入成功");
                     } else {
@@ -666,6 +689,7 @@ public class MainActivity extends AppCompatActivity {
                                 "}catch(e){return '';}" +
                                 "})()",
                         srcValue -> {
+                            if (!isActiveToken(token)) return;
                             if (srcValue == null) return;
                             String src = srcValue;
                             if (src.length() >= 2 && src.startsWith("\"") && src.endsWith("\"")) {
@@ -673,7 +697,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             if (isM3u8Url(src)) {
                                 if (devConsoleEnabled) addDevLog("Extract(video src m3u8): " + src);
-                                playM3u8WithVlc(src, url);
+                                playM3u8WithVlcIfActive(src, url, token);
                             }
                         }
                 );
@@ -689,6 +713,7 @@ public class MainActivity extends AppCompatActivity {
                                 "}catch(e){return '';}" +
                                 "})()",
                         m3u8Value -> {
+                            if (!isActiveToken(token)) return;
                             if (m3u8Value == null) return;
                             String m3u8 = m3u8Value;
                             if (m3u8.length() >= 2 && m3u8.startsWith("\"") && m3u8.endsWith("\"")) {
@@ -696,7 +721,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             if (isM3u8Url(m3u8)) {
                                 if (devConsoleEnabled) addDevLog("Extract(innerHTML m3u8): " + m3u8);
-                                playM3u8WithVlc(m3u8, url);
+                                playM3u8WithVlcIfActive(m3u8, url, token);
                             }
                         }
                 );
